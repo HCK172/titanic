@@ -134,7 +134,6 @@ entries_with_age['Age_Known'] = [1 for age in entries_with_age['Age']]
 combined['Age_Known'] = entries_with_age['Age_Known']
 combined.update(null_ages)
 
-training_data1 = combined[:891]
-test_data1 = combined[891:]
-
+training_data = combined[:891]
+test_data = combined[891:]
 
