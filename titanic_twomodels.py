@@ -103,30 +103,38 @@ def transform_all(data):
 training_data = transform_all(training_data)
 test_data = transform_all(test_data)
 all_data = [training_data, test_data]
-combine = pd.concat(all_data)
+combined = pd.concat(all_data, ignore_index=True)
 
-### age imputation
-entries_with_age = combine[pd.notnull(combine['Age'])]
-entries_no_age = combine[pd.isnull(combine['Age'])].drop('Age',axis=1)
-entries_with_age = entries_with_age.dropna()
-entries_no_age = entries_no_age.dropna()
+# age imputation
+entries_with_age = combined[pd.notnull(combined['Age'])]
+null_ages = combined[pd.isnull(combined['Age'])].drop('Age',axis=1)
+
+# Drop 'Survived' data due to NaN values
+entries_with_age = entries_with_age.drop('Survived', axis=1)
+null_ages = null_ages.drop('Survived', axis=1)
+
+# Impute single missing 'Fare' value with median
+entries_with_age['Fare'] = entries_with_age['Fare'].fillna(entries_with_age['Fare'].median())
+
 # logistic regression to predict age
-age_train_x = entries_with_age.drop('Age', axis=1)[:-100]
-age_test_x = entries_with_age.drop('Age', axis=1)[-100:]
-age_train_y = entries_with_age['Age'][:-100]
-age_test_y = entries_with_age['Age'][-100:]
+age_train_x = entries_with_age.drop('Age', axis=1)
+age_train_y = entries_with_age['Age']
 
 regr = LinearRegression()
 regr.fit(age_train_x, age_train_y)
 
-# predict ages
-# The coefficients
-print('Coefficients: \n', regr.coef_)
-# The mean squared error
-print("Mean squared error: %.2f"
-      % np.mean((regr.predict(age_test_x) - age_test_y) ** 2))
-# Explained variance score: 1 is perfect prediction
-print('Variance score: %.2f' % regr.score(age_test_x, age_test_y))
+# predict ages for missing age values and add predicted column
+null_ages['Age'] = regr.predict(null_ages).round()
+null_ages['Age_Known'] = [0 for age in null_ages['Age']]
 
-# predict ages for missing age values
-print(regr.predict(entries_no_age).astype(int))
+# add predicted column for known ages
+entries_with_age['Age_Known'] = [1 for age in entries_with_age['Age']]
+
+# replace null values in original data frame
+combined['Age_Known'] = entries_with_age['Age_Known']
+combined.update(null_ages)
+
+training_data1 = combined[:891]
+test_data1 = combined[891:]
+
+
