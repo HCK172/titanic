@@ -136,4 +136,3 @@ combined.update(null_ages)
 
 training_data = combined[:891]
 test_data = combined[891:]
-
