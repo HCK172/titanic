@@ -107,20 +107,26 @@ combine = pd.concat(all_data)
 
 ### age imputation
 entries_with_age = combine[pd.notnull(combine['Age'])]
-entries_no_age = combine[pd.isnull(combine['Age'])]
+entries_no_age = combine[pd.isnull(combine['Age'])].drop('Age',axis=1)
 entries_with_age = entries_with_age.dropna()
+entries_no_age = entries_no_age.dropna()
 # logistic regression to predict age
-#entries_with_age = entries_with_age[['Age','Embarked', 'Pclass', 'Sex','Fare','SibSp','Parch','Survived','Title']]
 age_train_x = entries_with_age.drop('Age', axis=1)[:-100]
 age_test_x = entries_with_age.drop('Age', axis=1)[-100:]
 age_train_y = entries_with_age['Age'][:-100]
 age_test_y = entries_with_age['Age'][-100:]
 
-lr_age = LinearRegression()
-lr_age.fit(age_train_x, age_train_y)
+regr = LinearRegression()
+regr.fit(age_train_x, age_train_y)
 
+# predict ages
 # The coefficients
-print(lr_age.coef_)
-
+print('Coefficients: \n', regr.coef_)
+# The mean squared error
+print("Mean squared error: %.2f"
+      % np.mean((regr.predict(age_test_x) - age_test_y) ** 2))
 # Explained variance score: 1 is perfect prediction
-print('Variance score: %.2f' % lr_age.score(age_test_x, age_test_y))
+print('Variance score: %.2f' % regr.score(age_test_x, age_test_y))
+
+# predict ages for missing age values
+print(regr.predict(entries_no_age).astype(int))
