@@ -107,47 +107,48 @@ test_data = transform_all(test_data)
 training_data['Fare'] = training_data['Fare'].fillna(training_data['Fare'].median())
 test_data['Fare'] = test_data['Fare'].fillna(test_data['Fare'].median())
 
-# Add Age_Known variable
-training_data['Age_Known'] = 1
-test_data['Age_Known'] = 1
-select_null = pd.isnull(training_data['Age'])
-training_data.loc[select_null,'Age_Known'] = 0
-select_null = pd.isnull(test_data['Age'])
-test_data.loc[select_null,'Age_Known'] = 0
+# create Age_Known variable
 
 
 all_data = [training_data, test_data]
 combined = pd.concat(all_data, ignore_index=True)
 
-
 # age imputation
-train_not = training_data[pd.notnull(training_data['Age'])]
-test_not = test_data[pd.notnull(test_data['Age'])]
+train_age = training_data[pd.notnull(training_data['Age'])]
 train_null = training_data[pd.isnull(training_data['Age'])].drop('Age',axis=1)
 test_null = test_data[pd.isnull(test_data['Age'])].drop('Age',axis=1)
 
-# Drop 'Survived' as it is the target variable
-droplist = 'Survived'.split()
-train_not = train_not.drop(droplist, axis=1)
-train_null = train_null.drop(droplist, axis=1)
+# Drop 'Survived' data due to NaN values
+train_age = train_age.drop('Survived', axis=1)
+train_null = train_null.drop('Survived', axis=1)
+
+# Impute single missing 'Fare' value with median
+entries_with_age['Fare'] = entries_with_age['Fare'].fillna(entries_with_age['Fare'].median())
 
 # define training sets
-age_train_x = train_not.drop('Age', axis=1)
-age_train_y = train_not['Age']
+age_train_x = entries_with_age.drop('Age', axis=1)
+age_train_y = entries_with_age['Age']
 
 # SVR
-svr_rbf = SVR(kernel='rbf', C=1e2, gamma=0.01)
-train_null['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(train_null).round()
-test_null['Age'] = svr_rbf.fit(test_not.drop('Age', axis=1), test_not['Age']).predict(test_null).round()
+svr_rbf = SVR(kernel='rbf', C=1e2, gamma=0.1)
+null_ages['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(null_ages).round()
+null_ages['Age_Known'] = [0 for age in null_ages['Age']]
+
+# add predicted column for known ages
+entries_with_age['Age_Known'] = [1 for age in entries_with_age['Age']]
 
 # replace null values in original data frame
-training_data.update(train_null)
-test_data.update(test_null)
+combined['Age_Known'] = entries_with_age['Age_Known']
+combined.update(null_ages)
+
+training_data = combined[:891].drop('PassengerId', axis=1)
+passid = test_data['PassengerId']
+test_data = combined[891:].drop('PassengerId', axis=1).drop('Survived', axis=1)
 
 # define regression data sets
 X_train = training_data.drop('Survived', axis=1)
 Y_train = training_data['Survived']
-X_test = test_data.copy()
+X_test  = test_data.copy()
 
 # Logistic Regression
 logreg = LogisticRegression()
@@ -201,7 +202,6 @@ acc_decision_tree = round(decision_tree.score(X_train, Y_train) * 100, 2)
 random_forest = RandomForestClassifier(n_estimators=13)
 random_forest.fit(X_train, Y_train)
 Y_pred = random_forest.predict(X_test)
-before = Y_pred
 random_forest.score(X_train, Y_train)
 acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
 print("--Before--")
@@ -215,26 +215,25 @@ models = pd.DataFrame({
     'Score': [acc_svc, acc_knn, acc_log,
               acc_random_forest, acc_gaussian, acc_perceptron,
               acc_sgd, acc_linear_svc, acc_decision_tree]})
-#print(models.sort_values(by='Score', ascending=False))
+# print(models.sort_values(by='Score', ascending=False))
 
 # use SVM as a new training data point to feed an random forest with reduced estimators
-X_train['svc'] = logreg.predict(X_train)
-X_test['svc'] = logreg.predict(X_test)
+X_train['svc'] = svc.predict(X_train)
+X_test['svc'] = svc.predict(X_test)
 
 # Random Forest
 random_forest = RandomForestClassifier(n_estimators=13)
 random_forest.fit(X_train, Y_train)
 Y_pred = random_forest.predict(X_test)
-print("The number of changed predictions: %d" %np.sum(np.abs(Y_pred - before)))
 random_forest.score(X_train, Y_train)
 acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
 print("--After--")
 print(acc_random_forest)
-print(Y_pred)
+
 # submission file
-# submission = pd.DataFrame({
-#         "PassengerId": test_data['PassengerId'].astype(int),
-#         "Survived": Y_pred
-#     })
-#
-# submission.to_csv('../submission.csv', index=False)
+submission = pd.DataFrame({
+        "PassengerId": passid,
+        "Survived": Y_pred
+    })
+
+submission.to_csv('../submission.csv', index=False)
