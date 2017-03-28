@@ -103,6 +103,10 @@ def transform_all(data):
 
 training_data = transform_all(training_data)
 test_data = transform_all(test_data)
+# Impute single missing 'Fare' value with median
+training_data['Fare'] = training_data['Fare'].fillna(training_data['Fare'].median())
+test_data['Fare'] = test_data['Fare'].fillna(test_data['Fare'].median())
+
 all_data = [training_data, test_data]
 combined = pd.concat(all_data, ignore_index=True)
 
@@ -126,8 +130,6 @@ svr_rbf = SVR(kernel='rbf', C=1e2, gamma=0.1)
 null_ages['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(null_ages).round()
 null_ages['Age_Known'] = [0 for age in null_ages['Age']]
 
-print(null_ages['Age'].tolist())
-exit()
 # add predicted column for known ages
 entries_with_age['Age_Known'] = [1 for age in entries_with_age['Age']]
 
@@ -135,5 +137,75 @@ entries_with_age['Age_Known'] = [1 for age in entries_with_age['Age']]
 combined['Age_Known'] = entries_with_age['Age_Known']
 combined.update(null_ages)
 
-training_data = combined[:891]
-test_data = combined[891:]
+training_data = combined[:891].drop('PassengerId', axis=1)
+test_data = combined[891:].drop('PassengerId', axis=1).drop('Survived', axis=1)
+
+# define regression data sets
+X_train = training_data.drop('Survived', axis=1)
+Y_train = training_data['Survived']
+X_test  = test_data.copy()
+
+# Logistic Regression
+logreg = LogisticRegression()
+logreg.fit(X_train, Y_train)
+Y_pred = logreg.predict(X_test)
+acc_log = round(logreg.score(X_train, Y_train) * 100, 2)
+
+# Support Vector Machines
+svc = SVC()
+svc.fit(X_train, Y_train)
+Y_pred = svc.predict(X_test)
+acc_svc = round(svc.score(X_train, Y_train) * 100, 2)
+
+# k-Nearest Neighbors
+knn = KNeighborsClassifier(n_neighbors = 3)
+knn.fit(X_train, Y_train)
+Y_pred = knn.predict(X_test)
+acc_knn = round(knn.score(X_train, Y_train) * 100, 2)
+
+# Gaussian Naive Bayes
+gaussian = GaussianNB()
+gaussian.fit(X_train, Y_train)
+Y_pred = gaussian.predict(X_test)
+acc_gaussian = round(gaussian.score(X_train, Y_train) * 100, 2)
+
+# Perceptron
+perceptron = Perceptron()
+perceptron.fit(X_train, Y_train)
+Y_pred = perceptron.predict(X_test)
+acc_perceptron = round(perceptron.score(X_train, Y_train) * 100, 2)
+
+# Linear SVC
+linear_svc = LinearSVC()
+linear_svc.fit(X_train, Y_train)
+Y_pred = linear_svc.predict(X_test)
+acc_linear_svc = round(linear_svc.score(X_train, Y_train) * 100, 2)
+
+# Stochastic Gradient Descent
+sgd = SGDClassifier()
+sgd.fit(X_train, Y_train)
+Y_pred = sgd.predict(X_test)
+acc_sgd = round(sgd.score(X_train, Y_train) * 100, 2)
+
+# Decision Tree
+decision_tree = DecisionTreeClassifier()
+decision_tree.fit(X_train, Y_train)
+Y_pred = decision_tree.predict(X_test)
+acc_decision_tree = round(decision_tree.score(X_train, Y_train) * 100, 2)
+
+# Random Forest
+random_forest = RandomForestClassifier(n_estimators=100)
+random_forest.fit(X_train, Y_train)
+Y_pred = random_forest.predict(X_test)
+random_forest.score(X_train, Y_train)
+acc_random_forest = round(random_forest.score(X_train, Y_train) * 100, 2)
+
+models = pd.DataFrame({
+    'Model': ['Support Vector Machines', 'KNN', 'Logistic Regression',
+              'Random Forest', 'Naive Bayes', 'Perceptron',
+              'Stochastic Gradient Decent', 'Linear SVC',
+              'Decision Tree'],
+    'Score': [acc_svc, acc_knn, acc_log,
+              acc_random_forest, acc_gaussian, acc_perceptron,
+              acc_sgd, acc_linear_svc, acc_decision_tree]})
+print(models.sort_values(by='Score', ascending=False))
