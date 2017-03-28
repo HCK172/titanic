@@ -102,6 +102,10 @@ def transform_all(data):
 
 training_data = transform_all(training_data)
 test_data = transform_all(test_data)
+# Impute single missing 'Fare' value with median
+training_data['Fare'] = training_data['Fare'].fillna(training_data['Fare'].median())
+test_data['Fare'] = test_data['Fare'].fillna(test_data['Fare'].median())
+
 all_data = [training_data, test_data]
 combined = pd.concat(all_data, ignore_index=True)
 
