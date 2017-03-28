@@ -200,7 +200,7 @@ Y_pred_svm = svc.predict(test_data.drop(droplist[1:], axis=1)).astype(float)
 print("SVM model has %d survivors" %np.sum(Y_pred_svm))
 
 # combine the models
-Y_pred = (1/3.0)*np.add(Y_pred_svm, Y_pred_gender, Y_pred_clf)
+Y_pred = np.add(Y_pred_svm, Y_pred_gender, Y_pred_clf)
 Y_pred = Y_pred.round().astype(int)
 print("Combined model has %d survivors" %np.sum(Y_pred))
 print(Y_pred)
