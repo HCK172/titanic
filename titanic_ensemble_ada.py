@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 # machine learning
 from sklearn.svm import SVR
 from sklearn import preprocessing
-from sklearn import ensemble
-from sklearn.metrics import mean_squared_error
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import zero_one_loss
+from sklearn.ensemble import AdaBoostClassifier
 
 training_data = pd.read_csv('train.csv')
 test_data = pd.read_csv('test.csv')
@@ -143,53 +144,50 @@ offset = int(data.shape[0] * 0.9)
 X_train, y_train = X[:offset], y[:offset]
 X_test, y_test = X[offset:], y[offset:]
 
-params = {'n_estimators': 420, 'max_depth': 4, 'min_samples_split': 2,
-          'learning_rate': 0.01, 'loss': 'lad'}
-clf = ensemble.GradientBoostingRegressor(**params)
-# params = {'n_estimators': 100, 'max_depth': 3, 'min_samples_split': 2,
-#           'learning_rate': 0.01}
-# clf = ensemble.GradientBoostingClassifier(**params)
+n_estimators = 400
+learning_rate = 0.25
 
+dt_stump = DecisionTreeClassifier(max_depth=1, min_samples_leaf=1)
+dt_stump.fit(X_train, y_train)
+dt_stump_err = 1.0 - dt_stump.score(X_test, y_test)
 
-clf.fit(X_train, y_train)
-mse = mean_squared_error(y_test, clf.predict(X_test))
-print("MSE: %.4f" % mse)
+ada_real = AdaBoostClassifier(
+    base_estimator=dt_stump,
+    learning_rate=learning_rate,
+    n_estimators=n_estimators,
+    algorithm="SAMME.R")
+ada_real.fit(X_train, y_train)
 
-# compute test set deviance
-test_score = np.zeros((params['n_estimators'],), dtype=np.float64)
-
-for i, y_pred in enumerate(clf.staged_predict(X_test)):
-    test_score[i] = clf.loss_(y_test, y_pred)
-
-plt.figure(figsize=(12, 6))
-plt.subplot(1, 2, 1)
-plt.title('Deviance')
-plt.plot(np.arange(params['n_estimators']) + 1, clf.train_score_, 'b-',
-         label='Training Set Deviance')
-plt.plot(np.arange(params['n_estimators']) + 1, test_score, 'r-',
-         label='Test Set Deviance')
-plt.legend(loc='upper right')
-plt.xlabel('Boosting Iterations')
-plt.ylabel('Deviance')
-plt.show()
-
-feature_importance = clf.feature_importances_
-# make importances relative to max importance
-feature_importance = 100.0 * (feature_importance / feature_importance.max())
-sorted_idx = np.argsort(feature_importance)
-pos = np.arange(sorted_idx.shape[0]) + .5
-plt.subplot(1, 2, 2)
-plt.barh(pos, feature_importance[sorted_idx], align='center')
-plt.yticks(pos, X.columns.values[sorted_idx])
-plt.xlabel('Relative Importance')
-plt.title('Variable Importance')
-plt.show()
 
 # predict survival status
-Y_pred = clf.predict(test_data.drop(droplist[1:], axis=1))
-
-Y_pred = Y_pred.round().astype(int)
+Y_pred = ada_real.predict(test_data.drop(droplist[1:], axis=1))
 print(Y_pred)
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ada_real_err = np.zeros((n_estimators,))
+# for i, y_pred in enumerate(ada_real.staged_predict(X_test)):
+#     ada_real_err[i] = zero_one_loss(y_pred, y_test)
+#
+# ada_real_err_train = np.zeros((n_estimators,))
+# for i, y_pred in enumerate(ada_real.staged_predict(X_train)):
+#     ada_real_err_train[i] = zero_one_loss(y_pred, y_train)
+#
+# ax.plot(np.arange(n_estimators) + 1, ada_real_err,
+#         label='Real AdaBoost Test Error',
+#         color='orange')
+# ax.plot(np.arange(n_estimators) + 1, ada_real_err_train,
+#         label='Real AdaBoost Train Error',
+#         color='green')
+#
+# ax.set_ylim((0.0, 0.5))
+# ax.set_xlabel('n_estimators')
+# ax.set_ylabel('error rate')
+#
+# leg = ax.legend(loc='upper right', fancybox=True)
+# leg.get_frame().set_alpha(0.7)
+
+plt.show()
 # submission file
 # submission = pd.DataFrame({
 #         "PassengerId": test_data['PassengerId'].astype(int),
