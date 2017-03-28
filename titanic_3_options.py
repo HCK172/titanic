@@ -137,8 +137,9 @@ test_data.update(test_null)
 
 # gender based model
 Y_pred_gender = test_data['Sex']
+print("Gender model has %d survivors" %np.sum(Y_pred_gender))
 
-droplist = 'Survived PassengerId Age_Known Sex Cabin_Known'.split()
+droplist = 'Survived PassengerId Age_Known Sex Cabin_Known Title'.split()
 data = training_data.drop(droplist, axis=1)
 # ensmeble training and test set
 X, y = data, training_data['Survived']
@@ -149,11 +150,8 @@ X_test, y_test = X[offset:], y[offset:]
 params = {'n_estimators': 420, 'max_depth': 4, 'min_samples_split': 2,
           'learning_rate': 0.01, 'loss': 'lad'}
 clf = ensemble.GradientBoostingRegressor(**params)
-
-
 clf.fit(X_train, y_train)
-mse = mean_squared_error(y_test, clf.predict(X_test))
-print("MSE: %.4f" % mse)
+
 
 # compute test set deviance
 # test_score = np.zeros((params['n_estimators'],), dtype=np.float64)
@@ -187,13 +185,26 @@ print("MSE: %.4f" % mse)
 
 # predict survival status
 Y_pred_clf = clf.predict(test_data.drop(droplist[1:], axis=1))
-Y_pred_clf = Y_pred_clf.round().astype(int)
+Y_pred_clf = Y_pred_clf.round().astype(float)
+print("GBR model has %d survivors" %np.sum(Y_pred_clf))
 
 # Support Vector Machines
+droplist = 'Survived PassengerId Age_Known Cabin_Known Age Sex'.split()
+data = training_data.drop(droplist, axis=1)
+# ensmeble training and test set
+X, y = data, training_data['Survived']
+
 svc = SVC()
-svc.fit(X_train, Y_train)
-Y_pred = svc.predict(X_test)
-acc_svc = round(svc.score(X_train, Y_train) * 100, 2)
+svc.fit(X, y)
+Y_pred_svm = svc.predict(test_data.drop(droplist[1:], axis=1)).astype(float)
+print("SVM model has %d survivors" %np.sum(Y_pred_svm))
+
+# combine the models
+Y_pred = (1/3.0)*np.add(Y_pred_svm, Y_pred_gender, Y_pred_clf)
+Y_pred = Y_pred.round().astype(int)
+print("Combined model has %d survivors" %np.sum(Y_pred))
+print(Y_pred)
+
 
 # submission file
 # submission = pd.DataFrame({
