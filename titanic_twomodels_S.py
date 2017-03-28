@@ -126,8 +126,6 @@ svr_rbf = SVR(kernel='rbf', C=1e2, gamma=0.1)
 null_ages['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(null_ages).round()
 null_ages['Age_Known'] = [0 for age in null_ages['Age']]
 
-print(null_ages['Age'].tolist())
-exit()
 # add predicted column for known ages
 entries_with_age['Age_Known'] = [1 for age in entries_with_age['Age']]
 
