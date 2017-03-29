@@ -4,12 +4,15 @@ import numpy as np
 
 # visualization
 import matplotlib.pyplot as plt
+#import seaborn as sns
+from pandas.tools.plotting import scatter_matrix
 
 # machine learning
 from sklearn.svm import SVR, SVC
 from sklearn import preprocessing
 from sklearn import ensemble
-from sklearn.metrics import mean_squared_error
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 
 training_data = pd.read_csv('train.csv')
 test_data = pd.read_csv('test.csv')
@@ -134,12 +137,14 @@ test_null['Age'] = svr_rbf.fit(test_not.drop('Age', axis=1), test_not['Age']).pr
 # replace null values in original data frame
 training_data.update(train_null)
 test_data.update(test_null)
+print(training_data.columns.values)
 
 # gender based model
 Y_pred_gender = test_data['Sex']
 print("Gender model has %d survivors" %np.sum(Y_pred_gender))
 
-droplist = 'Survived PassengerId Age_Known Sex Cabin_Known Title'.split()
+# MLP
+droplist = 'Survived PassengerId Age_Known Cabin_Known'.split()
 data = training_data.drop(droplist, axis=1)
 # ensmeble training and test set
 X, y = data, training_data['Survived']
@@ -147,49 +152,33 @@ offset = int(data.shape[0] * 0.9)
 X_train, y_train = X[:offset], y[:offset]
 X_test, y_test = X[offset:], y[offset:]
 
-params = {'n_estimators': 420, 'max_depth': 4, 'min_samples_split': 2,
-          'learning_rate': 0.01, 'loss': 'lad'}
-clf = ensemble.GradientBoostingRegressor(**params)
+# MLP
+clf = MLPClassifier(solver='lbfgs', alpha=1e-1, hidden_layer_sizes=(15, 8), random_state=1)
+clf.fit(X, y)
+Y_pred_MLP = clf.predict(test_data.drop(droplist[1:], axis=1))
+print("MLP model has %d survivors" %np.sum(Y_pred_MLP))
+
+# ensemble
+droplist = 'Survived PassengerId Age_Known Cabin_Known Title Fare Cabin Embarked'.split()
+data = training_data.drop(droplist, axis=1)
+# ensmeble training and test set
+X, y = data, training_data['Survived']
+offset = int(data.shape[0] * 0.9)
+X_train, y_train = X[:offset], y[:offset]
+X_test, y_test = X[offset:], y[offset:]
+# ensemble GBC
+params = {'n_estimators': 100, 'max_depth': 3, 'min_samples_split': 2,
+          'learning_rate': 0.11}
+clf = ensemble.GradientBoostingClassifier(**params)
 clf.fit(X_train, y_train)
 
-
-# compute test set deviance
-# test_score = np.zeros((params['n_estimators'],), dtype=np.float64)
-#
-# for i, y_pred in enumerate(clf.staged_predict(X_test)):
-#     test_score[i] = clf.loss_(y_test, y_pred)
-#
-# plt.figure(figsize=(12, 6))
-# plt.subplot(1, 2, 1)
-# plt.title('Deviance')
-# plt.plot(np.arange(params['n_estimators']) + 1, clf.train_score_, 'b-',
-#          label='Training Set Deviance')
-# plt.plot(np.arange(params['n_estimators']) + 1, test_score, 'r-',
-#          label='Test Set Deviance')
-# plt.legend(loc='upper right')
-# plt.xlabel('Boosting Iterations')
-# plt.ylabel('Deviance')
-# plt.show()
-#
-# feature_importance = clf.feature_importances_
-# # make importances relative to max importance
-# feature_importance = 100.0 * (feature_importance / feature_importance.max())
-# sorted_idx = np.argsort(feature_importance)
-# pos = np.arange(sorted_idx.shape[0]) + .5
-# plt.subplot(1, 2, 2)
-# plt.barh(pos, feature_importance[sorted_idx], align='center')
-# plt.yticks(pos, X.columns.values[sorted_idx])
-# plt.xlabel('Relative Importance')
-# plt.title('Variable Importance')
-# plt.show()
-
 # predict survival status
-Y_pred_clf = clf.predict(test_data.drop(droplist[1:], axis=1))
-Y_pred_clf = Y_pred_clf.round().astype(float)
-print("GBR model has %d survivors" %np.sum(Y_pred_clf))
+Y_pred_GBC = clf.predict(test_data.drop(droplist[1:], axis=1))
+Y_pred_GBC = Y_pred_GBC.round().astype(float)
+print("GBC model has %d survivors" %np.sum(Y_pred_GBC))
 
 # Support Vector Machines
-droplist = 'Survived PassengerId Age_Known Cabin_Known Age Sex'.split()
+droplist = 'Survived PassengerId Age_Known Cabin_Known Pclass Sex Age Embarked'.split()
 data = training_data.drop(droplist, axis=1)
 # ensmeble training and test set
 X, y = data, training_data['Survived']
@@ -200,16 +189,21 @@ Y_pred_svm = svc.predict(test_data.drop(droplist[1:], axis=1)).astype(float)
 print("SVM model has %d survivors" %np.sum(Y_pred_svm))
 
 # combine the models
-Y_pred = np.add(Y_pred_svm, Y_pred_gender, Y_pred_clf)
+Y_pred = np.add(0.3*Y_pred_MLP, 0.3*Y_pred_gender, 0.4*Y_pred_GBC)
 Y_pred = Y_pred.round().astype(int)
 print("Combined model has %d survivors" %np.sum(Y_pred))
-print(Y_pred)
 
+
+prev_df = pd.read_csv("../submission_3_models.csv")
+best = pd.read_csv("../submission_GBC.csv")
+print("The best model has %d survivors" %np.sum(best['Survived']))
+print("number of different elements is %d" %np.sum(np.abs(np.add(Y_pred, -1.0*best['Survived']))))
+Y_pred = Y_pred_MLP.astype(int)
 
 # submission file
-# submission = pd.DataFrame({
-#         "PassengerId": test_data['PassengerId'].astype(int),
-#         "Survived": Y_pred
-#     })
-#
-# submission.to_csv('../submission.csv', index=False)
+submission = pd.DataFrame({
+        "PassengerId": test_data['PassengerId'].astype(int),
+        "Survived": Y_pred
+    })
+
+submission.to_csv('../submission.csv', index=False)
