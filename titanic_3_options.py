@@ -144,19 +144,23 @@ Y_pred_gender = test_data['Sex']
 print("Gender model has %d survivors" %np.sum(Y_pred_gender))
 
 # MLP
-droplist = 'Survived PassengerId Age_Known Cabin_Known'.split()
+droplist = 'Survived PassengerId Age_Known Cabin_Known Fare'.split()
 data = training_data.drop(droplist, axis=1)
 # ensmeble training and test set
 X, y = data, training_data['Survived']
+
 offset = int(data.shape[0] * 0.9)
 X_train, y_train = X[:offset], y[:offset]
 X_test, y_test = X[offset:], y[offset:]
 
 # MLP
-clf = MLPClassifier(solver='lbfgs', alpha=1e-1, hidden_layer_sizes=(15, 8), random_state=1)
-clf.fit(X, y)
-Y_pred_MLP = clf.predict(test_data.drop(droplist[1:], axis=1))
+param = {'solver': 'adam', 'learning_rate_init': 0.01}
+mlp = MLPClassifier(verbose=0, random_state=0, max_iter=600, hidden_layer_sizes=(15,7), **param)
+mlp.fit(X_train, y_train)
+Y_pred_MLP = mlp.predict(test_data.drop(droplist[1:], axis=1))
 print("MLP model has %d survivors" %np.sum(Y_pred_MLP))
+print("Training set score: %f" % mlp.score(X_test, y_test))
+
 
 # ensemble
 droplist = 'Survived PassengerId Age_Known Cabin_Known Title Fare Cabin Embarked'.split()
@@ -189,7 +193,7 @@ Y_pred_svm = svc.predict(test_data.drop(droplist[1:], axis=1)).astype(float)
 print("SVM model has %d survivors" %np.sum(Y_pred_svm))
 
 # combine the models
-Y_pred = np.add(0.3*Y_pred_MLP, 0.3*Y_pred_gender, 0.4*Y_pred_GBC)
+Y_pred = np.add(0.3333*Y_pred_MLP, 0.3333*Y_pred_svm, 0.3333*Y_pred_GBC)
 Y_pred = Y_pred.round().astype(int)
 print("Combined model has %d survivors" %np.sum(Y_pred))
 
@@ -199,11 +203,10 @@ best = pd.read_csv("../submission_GBC.csv")
 print("The best model has %d survivors" %np.sum(best['Survived']))
 print("number of different elements is %d" %np.sum(np.abs(np.add(Y_pred, -1.0*best['Survived']))))
 Y_pred = Y_pred_MLP.astype(int)
-
 # submission file
-submission = pd.DataFrame({
-        "PassengerId": test_data['PassengerId'].astype(int),
-        "Survived": Y_pred
-    })
-
-submission.to_csv('../submission.csv', index=False)
+# submission = pd.DataFrame({
+#         "PassengerId": test_data['PassengerId'].astype(int),
+#         "Survived": Y_pred
+#     })
+#
+# submission.to_csv('../submission.csv', index=False)
