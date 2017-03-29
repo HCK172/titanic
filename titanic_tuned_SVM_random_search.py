@@ -162,6 +162,7 @@ droplist = 'Survived PassengerId Age_Known Cabin_Known'.split()
 data = training_data.drop(droplist, axis=1)
 # Define features and target values
 X, y = data, training_data['Survived']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
 # Set the parameters by cross-validation
 # param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
@@ -194,3 +195,11 @@ Model with rank: 3
 Mean validation score: 0.743 (std: 0.043)
 Parameters: {'kernel': 'rbf', 'C': 52.899622890128853, 'gamma': 0.0082409957265795475, 'class_weight': 'balanced'}
 """
+
+# params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
+# clf = SVC(**params)
+# clf.fit(X_train, y_train)
+# print(clf.score(X_test, y_test))
+# print('------------')
+# scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
+# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
