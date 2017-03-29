@@ -147,7 +147,49 @@ age_train_x = train_not.drop('Age', axis=1)
 age_train_y = train_not['Age']
 
 # SVR
-svr_rbf = SVR(kernel='rbf', C=1e2, gamma=0.01)
+# #Set the parameters by cross-validation
+# param_dist = {'C': scipy.stats.expon(scale=100), 'gamma': scipy.stats.expon(scale=.1),
+#   'kernel': ['rbf']}
+#
+# clf = SVR()
+#
+# # run randomized search
+# n_iter_search = 1000
+# random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+#                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
+#
+# start = time()
+# random_search.fit(age_train_x, age_train_y)
+# print("RandomizedSearchCV took %.2f seconds for %d candidates"
+#       " parameter settings." % ((time() - start), n_iter_search))
+# report(random_search.cv_results_)
+# exit()
+"""
+RandomizedSearchCV took 96.99 seconds for 1000 candidates parameter settings.
+Model with rank: 1
+Mean validation score: -0.025 (std: 0.028)
+Parameters: {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
+
+Model with rank: 2
+Mean validation score: -0.025 (std: 0.030)
+Parameters: {'kernel': 'rbf', 'C': 5.1036960496494048, 'gamma': 0.016725050875664324}
+
+Model with rank: 3
+Mean validation score: -0.025 (std: 0.035)
+Parameters: {'kernel': 'rbf', 'C': 2.9846192099553939, 'gamma': 0.01440223280430194}
+"""
+params = {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
+clf = SVR(**params)
+scores = cross_val_score(clf, age_train_x, age_train_y, cv=4, n_jobs=-1)
+print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+clf.fit(age_train_x, age_train_y)
+age_values = clf.predict(test_null).round()
+# age_values = age_values+np.abs(np.min(age_values))+1
+print(np.min(age_values))
+print(age_values)
+exit()
+
+
 train_null['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(train_null).round()
 test_null['Age'] = svr_rbf.fit(test_not.drop('Age', axis=1), test_not['Age']).predict(test_null).round()
 
