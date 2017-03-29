@@ -1,18 +1,23 @@
 # data analysis and wrangling
 import pandas as pd
 import numpy as np
+import scipy
 
 # visualization
 import matplotlib.pyplot as plt
-#import seaborn as sns
-from pandas.tools.plotting import scatter_matrix
+import seaborn as sns
 
 # machine learning
 from sklearn.svm import SVR, SVC
 from sklearn import preprocessing
-from sklearn import ensemble
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import classification_report
+from sklearn.model_selection import cross_val_score
+
+# utility
+from time import time
 
 training_data = pd.read_csv('train.csv')
 test_data = pd.read_csv('test.csv')
@@ -83,6 +88,18 @@ def add_title(data):
 def drop_features(data):
     return data.drop(['Name', 'Ticket'], axis=1)
 
+# Utility function to report best scores
+def report(results, n_top=3):
+    for i in range(1, n_top + 1):
+        candidates = np.flatnonzero(results['rank_test_score'] == i)
+        for candidate in candidates:
+            print("Model with rank: {0}".format(i))
+            print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
+                  results['mean_test_score'][candidate],
+                  results['std_test_score'][candidate]))
+            print("Parameters: {0}".format(results['params'][candidate]))
+            print("")
+
 
 # Perform all feature transformations.
 def transform_all(data):
@@ -130,83 +147,101 @@ age_train_x = train_not.drop('Age', axis=1)
 age_train_y = train_not['Age']
 
 # SVR
-svr_rbf = SVR(kernel='rbf', C=1e2, gamma=0.01)
+# #Set the parameters by cross-validation
+# param_dist = {'C': scipy.stats.expon(scale=100), 'gamma': scipy.stats.expon(scale=.1),
+#   'kernel': ['rbf']}
+#
+# clf = SVR()
+#
+# # run randomized search
+# n_iter_search = 1000
+# random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+#                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
+#
+# start = time()
+# random_search.fit(age_train_x, age_train_y)
+# print("RandomizedSearchCV took %.2f seconds for %d candidates"
+#       " parameter settings." % ((time() - start), n_iter_search))
+# report(random_search.cv_results_)
+# exit()
+"""
+RandomizedSearchCV took 96.99 seconds for 1000 candidates parameter settings.
+Model with rank: 1
+Mean validation score: -0.025 (std: 0.028)
+Parameters: {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
+
+Model with rank: 2
+Mean validation score: -0.025 (std: 0.030)
+Parameters: {'kernel': 'rbf', 'C': 5.1036960496494048, 'gamma': 0.016725050875664324}
+
+Model with rank: 3
+Mean validation score: -0.025 (std: 0.035)
+Parameters: {'kernel': 'rbf', 'C': 2.9846192099553939, 'gamma': 0.01440223280430194}
+"""
+params = {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
+clf = SVR(**params)
+scores = cross_val_score(clf, age_train_x, age_train_y, cv=4, n_jobs=-1)
+print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+clf.fit(age_train_x, age_train_y)
+age_values = clf.predict(test_null).round()
+# age_values = age_values+np.abs(np.min(age_values))+1
+print(np.min(age_values))
+print(age_values)
+exit()
+
+
 train_null['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(train_null).round()
 test_null['Age'] = svr_rbf.fit(test_not.drop('Age', axis=1), test_not['Age']).predict(test_null).round()
 
 # replace null values in original data frame
 training_data.update(train_null)
 test_data.update(test_null)
-print(training_data.columns.values)
-
-# gender based model
-Y_pred_gender = test_data['Sex']
-print("Gender model has %d survivors" %np.sum(Y_pred_gender))
-
-# MLP
-droplist = 'Survived PassengerId Age_Known Cabin_Known Fare'.split()
-data = training_data.drop(droplist, axis=1)
-# ensmeble training and test set
-X, y = data, training_data['Survived']
-
-offset = int(data.shape[0] * 0.9)
-X_train, y_train = X[:offset], y[:offset]
-X_test, y_test = X[offset:], y[offset:]
-
-# MLP
-param = {'solver': 'adam', 'learning_rate_init': 0.01}
-mlp = MLPClassifier(verbose=0, random_state=0, max_iter=600, hidden_layer_sizes=(15,7), **param)
-mlp.fit(X_train, y_train)
-Y_pred_MLP = mlp.predict(test_data.drop(droplist[1:], axis=1))
-print("MLP model has %d survivors" %np.sum(Y_pred_MLP))
-print("Training set score: %f" % mlp.score(X_test, y_test))
-
-
-# ensemble
-droplist = 'Survived PassengerId Age_Known Cabin_Known Title Fare Cabin Embarked'.split()
-data = training_data.drop(droplist, axis=1)
-# ensmeble training and test set
-X, y = data, training_data['Survived']
-offset = int(data.shape[0] * 0.9)
-X_train, y_train = X[:offset], y[:offset]
-X_test, y_test = X[offset:], y[offset:]
-# ensemble GBC
-params = {'n_estimators': 100, 'max_depth': 3, 'min_samples_split': 2,
-          'learning_rate': 0.11}
-clf = ensemble.GradientBoostingClassifier(**params)
-clf.fit(X_train, y_train)
-
-# predict survival status
-Y_pred_GBC = clf.predict(test_data.drop(droplist[1:], axis=1))
-Y_pred_GBC = Y_pred_GBC.round().astype(float)
-print("GBC model has %d survivors" %np.sum(Y_pred_GBC))
+# print(training_data.columns.values)
+# ----------------------------------
 
 # Support Vector Machines
-droplist = 'Survived PassengerId Age_Known Cabin_Known Pclass Sex Age Embarked'.split()
+droplist = 'Survived PassengerId Age_Known Cabin_Known'.split()
 data = training_data.drop(droplist, axis=1)
-# ensmeble training and test set
+# Define features and target values
 X, y = data, training_data['Survived']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
-svc = SVC()
-svc.fit(X, y)
-Y_pred_svm = svc.predict(test_data.drop(droplist[1:], axis=1)).astype(float)
-print("SVM model has %d survivors" %np.sum(Y_pred_svm))
-
-# combine the models
-Y_pred = np.add(0.3333*Y_pred_MLP, 0.3333*Y_pred_svm, 0.3333*Y_pred_GBC)
-Y_pred = Y_pred.round().astype(int)
-print("Combined model has %d survivors" %np.sum(Y_pred))
-
-
-prev_df = pd.read_csv("../submission_3_models.csv")
-best = pd.read_csv("../submission_GBC.csv")
-print("The best model has %d survivors" %np.sum(best['Survived']))
-print("number of different elements is %d" %np.sum(np.abs(np.add(Y_pred, -1.0*best['Survived']))))
-Y_pred = Y_pred_MLP.astype(int)
-# submission file
-# submission = pd.DataFrame({
-#         "PassengerId": test_data['PassengerId'].astype(int),
-#         "Survived": Y_pred
-#     })
+# Set the parameters by cross-validation
+# param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
+#   'kernel': ['rbf'], 'class_weight':['balanced', None]}
 #
-# submission.to_csv('../submission.csv', index=False)
+# clf = SVC()
+#
+# # run randomized search
+# n_iter_search = 1000
+# random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+#                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
+#
+# start = time()
+# random_search.fit(X, y)
+# print("RandomizedSearchCV took %.2f seconds for %d candidates"
+#       " parameter settings." % ((time() - start), n_iter_search))
+# report(random_search.cv_results_)
+
+"""
+RandomizedSearchCV took 155.39 seconds for 1000 candidates parameter settings.
+Model with rank: 1
+Mean validation score: 0.758 (std: 0.031)
+Parameters: {'kernel': 'rbf', 'C': 844.42928120986517, 'gamma': 0.002443261152098474, 'class_weight': 'balanced'}
+
+Model with rank: 2
+Mean validation score: 0.745 (std: 0.032)
+Parameters: {'kernel': 'rbf', 'C': 574.80477276490637, 'gamma': 0.0050353231162486569, 'class_weight': 'balanced'}
+
+Model with rank: 3
+Mean validation score: 0.743 (std: 0.043)
+Parameters: {'kernel': 'rbf', 'C': 52.899622890128853, 'gamma': 0.0082409957265795475, 'class_weight': 'balanced'}
+"""
+
+# params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
+# clf = SVC(**params)
+# clf.fit(X_train, y_train)
+# print(clf.score(X_test, y_test))
+# print('------------')
+# scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
+# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
