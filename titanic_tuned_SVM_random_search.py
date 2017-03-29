@@ -160,68 +160,37 @@ test_data.update(test_null)
 # Support Vector Machines
 droplist = 'Survived PassengerId Age_Known Cabin_Known'.split()
 data = training_data.drop(droplist, axis=1)
-# ensmeble training and test set
-# Split the dataset in two equal parts
+# Define features and target values
 X, y = data, training_data['Survived']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
 # Set the parameters by cross-validation
-tuned_parameters = [{'kernel': ['rbf'], 'gamma': [10,1,1e-1,1e-2,1e-3, 1e-4],
-                     'C': [0.1, 1, 10, 100, 1000, 10000]}]
+# param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
+#   'kernel': ['rbf'], 'class_weight':['balanced', None]}
+#
+# clf = SVC()
+#
+# # run randomized search
+# n_iter_search = 1000
+# random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+#                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
+#
+# start = time()
+# random_search.fit(X, y)
+# print("RandomizedSearchCV took %.2f seconds for %d candidates"
+#       " parameter settings." % ((time() - start), n_iter_search))
+# report(random_search.cv_results_)
 
-param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
-  'kernel': ['rbf'], 'class_weight':['balanced', None]}
+"""
+RandomizedSearchCV took 155.39 seconds for 1000 candidates parameter settings.
+Model with rank: 1
+Mean validation score: 0.758 (std: 0.031)
+Parameters: {'kernel': 'rbf', 'C': 844.42928120986517, 'gamma': 0.002443261152098474, 'class_weight': 'balanced'}
 
-clf = SVC()
+Model with rank: 2
+Mean validation score: 0.745 (std: 0.032)
+Parameters: {'kernel': 'rbf', 'C': 574.80477276490637, 'gamma': 0.0050353231162486569, 'class_weight': 'balanced'}
 
-# run randomized search
-n_iter_search = 1000
-random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                   n_iter=n_iter_search, n_jobs=-1, cv=4)
-
-start = time()
-random_search.fit(X, y)
-print("RandomizedSearchCV took %.2f seconds for %d candidates"
-      " parameter settings." % ((time() - start), n_iter_search))
-report(random_search.cv_results_)
-
-exit()
-params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
-clf = SVC(**params)
-clf.fit(X_train, y_train)
-print(clf.score(X_test, y_test))
-print('------------')
-scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
-print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-exit()
-
-scores = ['precision', 'recall']
-
-for score in scores:
-    print("# Tuning hyper-parameters for %s" % score)
-    print()
-
-    clf = GridSearchCV(SVC(C=1), tuned_parameters, cv=4, n_jobs=-1,
-                       scoring='%s_macro' % score)
-    clf.fit(X_train, y_train)
-
-    print("Best parameters set found on development set:")
-    print()
-    print(clf.best_params_)
-    print()
-    print("Grid scores on development set:")
-    print()
-    means = clf.cv_results_['mean_test_score']
-    stds = clf.cv_results_['std_test_score']
-    for mean, std, params in zip(means, stds, clf.cv_results_['params']):
-        print("%0.3f (+/-%0.03f) for %r"
-              % (mean, std * 2, params))
-    print()
-
-    print("Detailed classification report:")
-    print()
-    print("The model is trained on the full development set.")
-    print("The scores are computed on the full evaluation set.")
-    print()
-    y_true, y_pred = y_test, clf.predict(X_test)
-    print(classification_report(y_true, y_pred))
-    print()
+Model with rank: 3
+Mean validation score: 0.743 (std: 0.043)
+Parameters: {'kernel': 'rbf', 'C': 52.899622890128853, 'gamma': 0.0082409957265795475, 'class_weight': 'balanced'}
+"""
