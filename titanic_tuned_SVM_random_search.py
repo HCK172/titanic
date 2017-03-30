@@ -178,17 +178,16 @@ Model with rank: 3
 Mean validation score: -0.025 (std: 0.035)
 Parameters: {'kernel': 'rbf', 'C': 2.9846192099553939, 'gamma': 0.01440223280430194}
 """
-params = {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
-clf = SVR(**params)
-scores = cross_val_score(clf, age_train_x, age_train_y, cv=4, n_jobs=-1)
-print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-clf.fit(age_train_x, age_train_y)
-age_values = clf.predict(test_null).round()
-# age_values = age_values+np.abs(np.min(age_values))+1
-print(np.min(age_values))
-print(age_values)
-exit()
-
+# params = {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
+# clf = SVR(**params)
+# scores = cross_val_score(clf, age_train_x, age_train_y, cv=4, n_jobs=-1)
+# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+# clf.fit(age_train_x, age_train_y)
+# age_values = clf.predict(test_null).round()
+# # age_values = age_values+np.abs(np.min(age_values))+1
+# print(np.min(age_values))
+# print(age_values)
+# exit()
 
 train_null['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(train_null).round()
 test_null['Age'] = svr_rbf.fit(test_not.drop('Age', axis=1), test_not['Age']).predict(test_null).round()
