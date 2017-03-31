@@ -134,6 +134,9 @@ combined = impute_ages(combined)
 training_data = combined[:891]
 test_data = combined[891:].drop('Survived', axis=1)
 
+# transform age and fare data
+
+
 # ----------------------------------
 # Support Vector Machines
 droplist = 'Survived PassengerId Cabin_Known'.split()
@@ -149,7 +152,7 @@ param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(
 clf = SVC()
 
 # run randomized search
-n_iter_search = 100
+n_iter_search = 10000
 random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
 
@@ -161,23 +164,18 @@ report(random_search.cv_results_)
 exit()
 
 """
-RandomizedSearchCV took 45.54 seconds for 100 candidates parameter settings.
+RandomizedSearchCV took 159.82 seconds for 1000 candidates parameter settings.
 Model with rank: 1
-Mean validation score: 0.728 (std: 0.016)
-Parameters: {'class_weight': None, 'C': 679.96318460190412, 'gamma': 0.019667718074962925, 'kernel': 'rbf'}
+Mean validation score: 0.760 (std: 0.024)
+Parameters: {'kernel': 'rbf', 'C': 201.8181008185619, 'gamma': 0.0035281420230839347, 'class_weight': None}
 
 Model with rank: 2
-Mean validation score: 0.713 (std: 0.023)
-Parameters: {'class_weight': None, 'C': 492.03398820921666, 'gamma': 0.033645768514241503, 'kernel': 'rbf'}
+Mean validation score: 0.756 (std: 0.030)
+Parameters: {'kernel': 'rbf', 'C': 35.055226059892099, 'gamma': 0.0075361532549500501, 'class_weight': None}
 
 Model with rank: 3
-Mean validation score: 0.709 (std: 0.029)
-Parameters: {'class_weight': None, 'C': 542.22518668719897, 'gamma': 0.051283271728162383, 'kernel': 'rbf'}
-
-Model with rank: 3
-Mean validation score: 0.709 (std: 0.024)
-Parameters: {'class_weight': None, 'C': 275.30523259407619, 'gamma': 0.042169883744180736, 'kernel': 'rbf'}
-
+Mean validation score: 0.753 (std: 0.025)
+Parameters: {'kernel': 'rbf', 'C': 329.34339930391889, 'gamma': 0.0039950608425102221, 'class_weight': 'balanced'}
 """
 
 # params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
