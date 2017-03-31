@@ -134,8 +134,10 @@ combined = impute_ages(combined)
 training_data = combined[:891]
 test_data = combined[891:].drop('Survived', axis=1)
 
-# transform age and fare data
-
+# transform age and fare data to have mean zero and variance 1.0
+# it may only be appropriate to do a min max scaling here
+scaler = preprocessing.StandardScaler()
+training_data['Age Fare'.split()] = scaler.fit_transform(training_data['Age Fare'.split()])
 
 # ----------------------------------
 # Support Vector Machines
@@ -152,7 +154,7 @@ param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(
 clf = SVC()
 
 # run randomized search
-n_iter_search = 10000
+n_iter_search = 100
 random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
 
@@ -164,18 +166,18 @@ report(random_search.cv_results_)
 exit()
 
 """
-RandomizedSearchCV took 159.82 seconds for 1000 candidates parameter settings.
+RandomizedSearchCV took 151.82 seconds for 100 candidates parameter settings.
 Model with rank: 1
-Mean validation score: 0.760 (std: 0.024)
-Parameters: {'kernel': 'rbf', 'C': 201.8181008185619, 'gamma': 0.0035281420230839347, 'class_weight': None}
+Mean validation score: 0.822 (std: 0.007)
+Parameters: {'kernel': 'rbf', 'C': 20.729782752026537, 'gamma': 0.026940769242161156, 'class_weight': 'balanced'}
 
 Model with rank: 2
-Mean validation score: 0.756 (std: 0.030)
-Parameters: {'kernel': 'rbf', 'C': 35.055226059892099, 'gamma': 0.0075361532549500501, 'class_weight': None}
+Mean validation score: 0.816 (std: 0.018)
+Parameters: {'kernel': 'rbf', 'C': 9.7294108139516329, 'gamma': 0.17602705111966377, 'class_weight': None}
 
 Model with rank: 3
-Mean validation score: 0.753 (std: 0.025)
-Parameters: {'kernel': 'rbf', 'C': 329.34339930391889, 'gamma': 0.0039950608425102221, 'class_weight': 'balanced'}
+Mean validation score: 0.815 (std: 0.012)
+Parameters: {'kernel': 'rbf', 'C': 45.871238664370274, 'gamma': 0.042017133037765109, 'class_weight': None}
 """
 
 # params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
