@@ -161,18 +161,23 @@ report(random_search.cv_results_)
 exit()
 
 """
-RandomizedSearchCV took 155.39 seconds for 1000 candidates parameter settings.
+RandomizedSearchCV took 45.54 seconds for 100 candidates parameter settings.
 Model with rank: 1
-Mean validation score: 0.758 (std: 0.031)
-Parameters: {'kernel': 'rbf', 'C': 844.42928120986517, 'gamma': 0.002443261152098474, 'class_weight': 'balanced'}
+Mean validation score: 0.728 (std: 0.016)
+Parameters: {'class_weight': None, 'C': 679.96318460190412, 'gamma': 0.019667718074962925, 'kernel': 'rbf'}
 
 Model with rank: 2
-Mean validation score: 0.745 (std: 0.032)
-Parameters: {'kernel': 'rbf', 'C': 574.80477276490637, 'gamma': 0.0050353231162486569, 'class_weight': 'balanced'}
+Mean validation score: 0.713 (std: 0.023)
+Parameters: {'class_weight': None, 'C': 492.03398820921666, 'gamma': 0.033645768514241503, 'kernel': 'rbf'}
 
 Model with rank: 3
-Mean validation score: 0.743 (std: 0.043)
-Parameters: {'kernel': 'rbf', 'C': 52.899622890128853, 'gamma': 0.0082409957265795475, 'class_weight': 'balanced'}
+Mean validation score: 0.709 (std: 0.029)
+Parameters: {'class_weight': None, 'C': 542.22518668719897, 'gamma': 0.051283271728162383, 'kernel': 'rbf'}
+
+Model with rank: 3
+Mean validation score: 0.709 (std: 0.024)
+Parameters: {'class_weight': None, 'C': 275.30523259407619, 'gamma': 0.042169883744180736, 'kernel': 'rbf'}
+
 """
 
 # params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
