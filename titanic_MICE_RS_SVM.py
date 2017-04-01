@@ -196,3 +196,9 @@ print(predictions)
 print(np.sum(predictions))
 
 # output .csv for upload
+# submission = pd.DataFrame({
+#         "PassengerId": test_data['PassengerId'].astype(int),
+#         "Survived": predictions.astype(int)
+#     })
+#
+# submission.to_csv('../submission.csv', index=False)
