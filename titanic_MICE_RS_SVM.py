@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # machine learning
-from sklearn.svm import SVR, SVC
+from sklearn.svm import SVC
 from sklearn import preprocessing
+import fancyimpute
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import classification_report
 from sklearn.model_selection import cross_val_score
@@ -118,101 +118,44 @@ test_data = transform_all(test_data)
 training_data['Fare'] = training_data['Fare'].fillna(training_data['Fare'].median())
 test_data['Fare'] = test_data['Fare'].fillna(test_data['Fare'].median())
 
-# Add Age_Known variable
-training_data['Age_Known'] = 1
-test_data['Age_Known'] = 1
-select_null = pd.isnull(training_data['Age'])
-training_data.loc[select_null,'Age_Known'] = 0
-select_null = pd.isnull(test_data['Age'])
-test_data.loc[select_null,'Age_Known'] = 0
-
-
 all_data = [training_data, test_data]
-combined = pd.concat(all_data, ignore_index=True)
+combined = pd.concat(all_data)
 
+def impute_ages(data):
+    drop_survived = data.drop(['Survived'], axis=1)
+    column_titles = list(drop_survived)
+    mice_results = fancyimpute.MICE().complete(np.array(drop_survived))
+    results = pd.DataFrame(mice_results, columns=column_titles)
+    results['Survived'] = list(data['Survived'])
+    return results
 
-# age imputation
-train_not = training_data[pd.notnull(training_data['Age'])]
-test_not = test_data[pd.notnull(test_data['Age'])]
-train_null = training_data[pd.isnull(training_data['Age'])].drop('Age',axis=1)
-test_null = test_data[pd.isnull(test_data['Age'])].drop('Age',axis=1)
+combined = impute_ages(combined)
 
-# Drop 'Survived' as it is the target variable
-droplist = 'Survived'.split()
-train_not = train_not.drop(droplist, axis=1)
-train_null = train_null.drop(droplist, axis=1)
+training_data = combined[:891]
+test_data = combined[891:].drop('Survived', axis=1)
 
-# define training sets
-age_train_x = train_not.drop('Age', axis=1)
-age_train_y = train_not['Age']
+# transform age and fare data to have mean zero and variance 1.0
+# it may only be appropriate to do a min max scaling here
+scaler = preprocessing.StandardScaler()
+select = 'Age Fare'.split()
+training_data[select] = scaler.fit_transform(training_data[select])
 
-# SVR
-# #Set the parameters by cross-validation
-# param_dist = {'C': scipy.stats.expon(scale=100), 'gamma': scipy.stats.expon(scale=.1),
-#   'kernel': ['rbf']}
-#
-# clf = SVR()
-#
-# # run randomized search
-# n_iter_search = 1000
-# random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-#                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
-#
-# start = time()
-# random_search.fit(age_train_x, age_train_y)
-# print("RandomizedSearchCV took %.2f seconds for %d candidates"
-#       " parameter settings." % ((time() - start), n_iter_search))
-# report(random_search.cv_results_)
-# exit()
-"""
-RandomizedSearchCV took 96.99 seconds for 1000 candidates parameter settings.
-Model with rank: 1
-Mean validation score: -0.025 (std: 0.028)
-Parameters: {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
-
-Model with rank: 2
-Mean validation score: -0.025 (std: 0.030)
-Parameters: {'kernel': 'rbf', 'C': 5.1036960496494048, 'gamma': 0.016725050875664324}
-
-Model with rank: 3
-Mean validation score: -0.025 (std: 0.035)
-Parameters: {'kernel': 'rbf', 'C': 2.9846192099553939, 'gamma': 0.01440223280430194}
-"""
-# params = {'kernel': 'rbf', 'C': 5.3245322315759163, 'gamma': 0.0096550111224930225}
-# clf = SVR(**params)
-# scores = cross_val_score(clf, age_train_x, age_train_y, cv=4, n_jobs=-1)
-# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-# clf.fit(age_train_x, age_train_y)
-# age_values = clf.predict(test_null).round()
-# # age_values = age_values+np.abs(np.min(age_values))+1
-# print(np.min(age_values))
-# print(age_values)
-# exit()
-
-train_null['Age'] = svr_rbf.fit(age_train_x, age_train_y).predict(train_null).round()
-test_null['Age'] = svr_rbf.fit(test_not.drop('Age', axis=1), test_not['Age']).predict(test_null).round()
-
-# replace null values in original data frame
-training_data.update(train_null)
-test_data.update(test_null)
-# print(training_data.columns.values)
 # ----------------------------------
-
 # Support Vector Machines
-droplist = 'Survived PassengerId Age_Known Cabin_Known'.split()
+droplist = 'Survived PassengerId Cabin_Known'.split()
 data = training_data.drop(droplist, axis=1)
 # Define features and target values
 X, y = data, training_data['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
-
-# Set the parameters by cross-validation
+#
+# # Set the parameters by cross-validation
 # param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
 #   'kernel': ['rbf'], 'class_weight':['balanced', None]}
 #
 # clf = SVC()
 #
 # # run randomized search
-# n_iter_search = 1000
+# n_iter_search = 10000
 # random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
 #                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
 #
@@ -221,26 +164,41 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_
 # print("RandomizedSearchCV took %.2f seconds for %d candidates"
 #       " parameter settings." % ((time() - start), n_iter_search))
 # report(random_search.cv_results_)
+# exit()
 
 """
-RandomizedSearchCV took 155.39 seconds for 1000 candidates parameter settings.
+RandomizedSearchCV took 4851.48 seconds for 10000 candidates parameter settings.
 Model with rank: 1
-Mean validation score: 0.758 (std: 0.031)
-Parameters: {'kernel': 'rbf', 'C': 844.42928120986517, 'gamma': 0.002443261152098474, 'class_weight': 'balanced'}
+Mean validation score: 0.833 (std: 0.013)
+Parameters: {'kernel': 'rbf', 'C': 107.54222939713921, 'gamma': 0.013379109762586716, 'class_weight': None}
 
 Model with rank: 2
-Mean validation score: 0.745 (std: 0.032)
-Parameters: {'kernel': 'rbf', 'C': 574.80477276490637, 'gamma': 0.0050353231162486569, 'class_weight': 'balanced'}
+Mean validation score: 0.832 (std: 0.012)
+Parameters: {'kernel': 'rbf', 'C': 154.85033872208422, 'gamma': 0.010852578446979289, 'class_weight': None}
 
-Model with rank: 3
-Mean validation score: 0.743 (std: 0.043)
-Parameters: {'kernel': 'rbf', 'C': 52.899622890128853, 'gamma': 0.0082409957265795475, 'class_weight': 'balanced'}
+Model with rank: 2
+Mean validation score: 0.832 (std: 0.012)
+Parameters: {'kernel': 'rbf', 'C': 142.60506747360913, 'gamma': 0.011625955252680842, 'class_weight': None}
 """
 
-# params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
-# clf = SVC(**params)
-# clf.fit(X_train, y_train)
-# print(clf.score(X_test, y_test))
-# print('------------')
-# scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
-# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+params = {'kernel': 'rbf', 'C': 107.54222939713921, 'gamma': 0.013379109762586716, 'class_weight': None}
+clf = SVC(**params)
+scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
+print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+
+select = 'Age Fare'.split()
+test_data[select] = scaler.transform(test_data[select])
+
+droplist = 'PassengerId Cabin_Known'.split()
+clf.fit(X,y)
+predictions = clf.predict(test_data.drop(droplist, axis=1))
+print(predictions)
+print(np.sum(predictions))
+
+# output .csv for upload
+# submission = pd.DataFrame({
+#         "PassengerId": test_data['PassengerId'].astype(int),
+#         "Survived": predictions.astype(int)
+#     })
+#
+# submission.to_csv('../submission.csv', index=False)
