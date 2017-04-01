@@ -137,7 +137,8 @@ test_data = combined[891:].drop('Survived', axis=1)
 # transform age and fare data to have mean zero and variance 1.0
 # it may only be appropriate to do a min max scaling here
 scaler = preprocessing.StandardScaler()
-training_data['Age Fare'.split()] = scaler.fit_transform(training_data['Age Fare'.split()])
+select = 'Age Fare'.split()
+training_data[select] = scaler.fit_transform(training_data[select])
 
 # ----------------------------------
 # Support Vector Machines
@@ -146,44 +147,52 @@ data = training_data.drop(droplist, axis=1)
 # Define features and target values
 X, y = data, training_data['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
-
-# Set the parameters by cross-validation
-param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
-  'kernel': ['rbf'], 'class_weight':['balanced', None]}
-
-clf = SVC()
-
-# run randomized search
-n_iter_search = 100
-random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
-                                   n_iter=n_iter_search, n_jobs=-1, cv=4)
-
-start = time()
-random_search.fit(X, y)
-print("RandomizedSearchCV took %.2f seconds for %d candidates"
-      " parameter settings." % ((time() - start), n_iter_search))
-report(random_search.cv_results_)
-exit()
+#
+# # Set the parameters by cross-validation
+# param_dist = {'C': scipy.stats.uniform(0.1, 1000), 'gamma': scipy.stats.uniform(.001, 1.0),
+#   'kernel': ['rbf'], 'class_weight':['balanced', None]}
+#
+# clf = SVC()
+#
+# # run randomized search
+# n_iter_search = 10000
+# random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+#                                    n_iter=n_iter_search, n_jobs=-1, cv=4)
+#
+# start = time()
+# random_search.fit(X, y)
+# print("RandomizedSearchCV took %.2f seconds for %d candidates"
+#       " parameter settings." % ((time() - start), n_iter_search))
+# report(random_search.cv_results_)
+# exit()
 
 """
-RandomizedSearchCV took 151.82 seconds for 100 candidates parameter settings.
+RandomizedSearchCV took 4851.48 seconds for 10000 candidates parameter settings.
 Model with rank: 1
-Mean validation score: 0.822 (std: 0.007)
-Parameters: {'kernel': 'rbf', 'C': 20.729782752026537, 'gamma': 0.026940769242161156, 'class_weight': 'balanced'}
+Mean validation score: 0.833 (std: 0.013)
+Parameters: {'kernel': 'rbf', 'C': 107.54222939713921, 'gamma': 0.013379109762586716, 'class_weight': None}
 
 Model with rank: 2
-Mean validation score: 0.816 (std: 0.018)
-Parameters: {'kernel': 'rbf', 'C': 9.7294108139516329, 'gamma': 0.17602705111966377, 'class_weight': None}
+Mean validation score: 0.832 (std: 0.012)
+Parameters: {'kernel': 'rbf', 'C': 154.85033872208422, 'gamma': 0.010852578446979289, 'class_weight': None}
 
-Model with rank: 3
-Mean validation score: 0.815 (std: 0.012)
-Parameters: {'kernel': 'rbf', 'C': 45.871238664370274, 'gamma': 0.042017133037765109, 'class_weight': None}
+Model with rank: 2
+Mean validation score: 0.832 (std: 0.012)
+Parameters: {'kernel': 'rbf', 'C': 142.60506747360913, 'gamma': 0.011625955252680842, 'class_weight': None}
 """
 
-# params = {'kernel': 'rbf', 'C': 1000, 'gamma': 0.0001}
-# clf = SVC(**params)
-# clf.fit(X_train, y_train)
-# print(clf.score(X_test, y_test))
-# print('------------')
-# scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
-# print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+params = {'kernel': 'rbf', 'C': 107.54222939713921, 'gamma': 0.013379109762586716, 'class_weight': None}
+clf = SVC(**params)
+scores = cross_val_score(clf, X, y, cv=4, n_jobs=-1)
+print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+
+select = 'Age Fare'.split()
+test_data[select] = scaler.transform(test_data[select])
+
+droplist = 'PassengerId Cabin_Known'.split()
+clf.fit(X,y)
+predictions = clf.predict(test_data.drop(droplist, axis=1))
+print(predictions)
+print(np.sum(predictions))
+
+# output .csv for upload
