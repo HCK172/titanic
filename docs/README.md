@@ -1,7 +1,7 @@
 
 # Titanic: Machine Learning from Disaster
 ## *An Exploration into the Data using Python*
-### Data Science on the Hill by Michael Hoffman and Charlie Bonfield
+### Data Science on the Hill (Michael Hoffman and Charlie Bonfield)
 
 
 ## Table of Contents:
