@@ -1,7 +1,7 @@
 
 # Titanic: Machine Learning from Disaster
 ## *An Exploration into the Data using Python*
-### Data Science on the Hill (Michael Hoffman and Charlie Bonfield)
+### Data Science on the Hill (Michael Hoffman and Charlies Bonfield)
 
 
 ## Table of Contents:
@@ -18,28 +18,23 @@
 
 ## 1. Introduction <a class="anchor" id="first-bullet"></a>
 
-Insert outline of the notebook here. 
+To get familiar with Kaggle competitions we worked on the initial tutorial project. The goal is to predict who onboard the *Titanic* survived the accident. In our initial analysis, we wanted to see how much the predictions would change when the input data was scaled properly as opposed to unscaled (violating the assumptions of the underlying SVM model). We saw an approximately five percent improvement in accuracy by preprocessing the data properly.
 
 
 ```python
-# Import statements
-import numpy as np
+# data analysis and wrangling
 import pandas as pd
-import random as rnd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import fancyimpute
+import numpy as np
+import scipy
 
-from sklearn.svm import SVR
+# visualization
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# machine learning
+from sklearn.svm import SVC
 from sklearn import preprocessing
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC, LinearSVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import Perceptron
-from sklearn.linear_model import SGDClassifier
-from sklearn.tree import DecisionTreeClassifier
+import fancyimpute
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import classification_report
@@ -169,7 +164,7 @@ training_data.head()
 
 ## 3. All the Features! <a class="anchor" id="third-bullet"></a>
 
-Insert introductory discussion.
+We will be extracting the features with custom functions. This isn't necessary for all the features for this project, but we want to leave the possibilty for further development open for the future. 
 
 ### 3a. Extracting Titles from Names <a class="anchor" id="third-first"></a>
 
@@ -316,10 +311,10 @@ grid.add_legend();
 ```
 
 
-![png](Titanic_ML_v1_files/Titanic_ML_v1_19_0.png)
+![png](Titanic_ML_v1_files/Titanic_ML_v1_18_0.png)
 
 
-Although Southampton was the most popular port of embarkation, there was a greater fraction of passengers in the first ticket class from Cherbourg who paid $80.00 for their tickets. Therefore, we will assign 'C' to the missing values for **Embarked**. We will also recast **Embarked** as a numerical feature.   
+Although Southampton was the most popular port of embarkation, there was a greater fraction of passengers in the first ticket class from Cherbourg who paid 80.00 for their tickets. Therefore, we will assign 'C' to the missing values for **Embarked**. We will also recast **Embarked** as a numerical feature.   
 
 
 ```python
@@ -443,12 +438,8 @@ plt.axvline(fare_med, color='r', ls='dashed', lw='1', label='Median')
 plt.legend();
 ```
 
-    /anaconda/lib/python3.6/site-packages/statsmodels/nonparametric/kdetools.py:20: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-      y = X[:m/2+1] + np.r_[0,X[m/2+1:],0]*1j
 
-
-
-![png](Titanic_ML_v1_files/Titanic_ML_v1_28_1.png)
+![png](Titanic_ML_v1_files/Titanic_ML_v1_27_0.png)
 
 
 After examining the distribution of **Fare** restricted to the specified values of **Pclass** and **Fare**, we will use the median for the missing fare (as it falls very close the fare corresponding to the peak of the distribution).   
@@ -648,7 +639,7 @@ combined_data.head()
 
 ### 3f. Imputing Missing Ages  <a class="anchor" id="third-sixth"></a>
 
-Insert discussion of missing ages.
+It is expected that age will be an important feature; however, a number of ages are missing. Attempting to predict the ages with a simple model was not very successful. We decided to follow the [recommendations for imputation](https://www.omicsonline.org/open-access/a-comparison-of-six-methods-for-missing-data-imputation-2155-6180-1000224.php?aid=54590) from this article. 
 
 
 ```python
@@ -660,22 +651,18 @@ initial_dist = combined_data.Age[known_ages]
 sns.distplot(initial_dist)
 ```
 
-    /anaconda/lib/python3.6/site-packages/statsmodels/nonparametric/kdetools.py:20: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-      y = X[:m/2+1] + np.r_[0,X[m/2+1:],0]*1j
+
+
+
+    <matplotlib.axes._subplots.AxesSubplot at 0x10acfcb38>
 
 
 
 
-
-    <matplotlib.axes._subplots.AxesSubplot at 0x115397710>
-
+![png](Titanic_ML_v1_files/Titanic_ML_v1_41_1.png)
 
 
-
-![png](Titanic_ML_v1_files/Titanic_ML_v1_42_2.png)
-
-
-Insert description of age imputation. 
+[This paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3074241/) provides an introduction to the MICE method with a focus on practical aspects and challenges in using this method. We have chosen to use the MICE implementation from [`fancyimpute`](https://pypi.python.org/pypi/fancyimpute).
 
 
 ```python
@@ -692,72 +679,72 @@ complete_data.Age = complete_data.Age[~(complete_data.Age).index.duplicated(keep
 ```
 
     [MICE] Completing matrix with shape (1309, 10)
-    [MICE] Starting imputation round 1/110, elapsed time 0.000
-    [MICE] Starting imputation round 2/110, elapsed time 0.003
-    [MICE] Starting imputation round 3/110, elapsed time 0.004
-    [MICE] Starting imputation round 4/110, elapsed time 0.005
-    [MICE] Starting imputation round 5/110, elapsed time 0.005
-    [MICE] Starting imputation round 6/110, elapsed time 0.006
-    [MICE] Starting imputation round 7/110, elapsed time 0.007
-    [MICE] Starting imputation round 8/110, elapsed time 0.007
-    [MICE] Starting imputation round 9/110, elapsed time 0.008
-    [MICE] Starting imputation round 10/110, elapsed time 0.009
-    [MICE] Starting imputation round 11/110, elapsed time 0.010
-    [MICE] Starting imputation round 12/110, elapsed time 0.011
-    [MICE] Starting imputation round 13/110, elapsed time 0.012
-    [MICE] Starting imputation round 14/110, elapsed time 0.013
-    [MICE] Starting imputation round 15/110, elapsed time 0.013
-    [MICE] Starting imputation round 16/110, elapsed time 0.014
-    [MICE] Starting imputation round 17/110, elapsed time 0.015
-    [MICE] Starting imputation round 18/110, elapsed time 0.016
-    [MICE] Starting imputation round 19/110, elapsed time 0.016
-    [MICE] Starting imputation round 20/110, elapsed time 0.017
-    [MICE] Starting imputation round 21/110, elapsed time 0.018
-    [MICE] Starting imputation round 22/110, elapsed time 0.019
-    [MICE] Starting imputation round 23/110, elapsed time 0.019
-    [MICE] Starting imputation round 24/110, elapsed time 0.020
-    [MICE] Starting imputation round 25/110, elapsed time 0.021
-    [MICE] Starting imputation round 26/110, elapsed time 0.022
-    [MICE] Starting imputation round 27/110, elapsed time 0.022
-    [MICE] Starting imputation round 28/110, elapsed time 0.023
-    [MICE] Starting imputation round 29/110, elapsed time 0.024
-    [MICE] Starting imputation round 30/110, elapsed time 0.024
-    [MICE] Starting imputation round 31/110, elapsed time 0.025
-    [MICE] Starting imputation round 32/110, elapsed time 0.025
-    [MICE] Starting imputation round 33/110, elapsed time 0.026
-    [MICE] Starting imputation round 34/110, elapsed time 0.027
-    [MICE] Starting imputation round 35/110, elapsed time 0.027
-    [MICE] Starting imputation round 36/110, elapsed time 0.028
-    [MICE] Starting imputation round 37/110, elapsed time 0.028
-    [MICE] Starting imputation round 38/110, elapsed time 0.029
-    [MICE] Starting imputation round 39/110, elapsed time 0.030
-    [MICE] Starting imputation round 40/110, elapsed time 0.031
-    [MICE] Starting imputation round 41/110, elapsed time 0.032
-    [MICE] Starting imputation round 42/110, elapsed time 0.032
-    [MICE] Starting imputation round 43/110, elapsed time 0.033
-    [MICE] Starting imputation round 44/110, elapsed time 0.034
-    [MICE] Starting imputation round 45/110, elapsed time 0.034
-    [MICE] Starting imputation round 46/110, elapsed time 0.036
-    [MICE] Starting imputation round 47/110, elapsed time 0.039
-    [MICE] Starting imputation round 48/110, elapsed time 0.040
-    [MICE] Starting imputation round 49/110, elapsed time 0.041
-    [MICE] Starting imputation round 50/110, elapsed time 0.043
-    [MICE] Starting imputation round 51/110, elapsed time 0.044
-    [MICE] Starting imputation round 52/110, elapsed time 0.045
-    [MICE] Starting imputation round 53/110, elapsed time 0.047
-    [MICE] Starting imputation round 54/110, elapsed time 0.048
-    [MICE] Starting imputation round 55/110, elapsed time 0.049
-    [MICE] Starting imputation round 56/110, elapsed time 0.051
-    [MICE] Starting imputation round 57/110, elapsed time 0.051
-    [MICE] Starting imputation round 58/110, elapsed time 0.054
-    [MICE] Starting imputation round 59/110, elapsed time 0.055
-    [MICE] Starting imputation round 60/110, elapsed time 0.056
-    [MICE] Starting imputation round 61/110, elapsed time 0.058
+    [MICE] Starting imputation round 1/110, elapsed time 0.001
+    [MICE] Starting imputation round 2/110, elapsed time 0.005
+    [MICE] Starting imputation round 3/110, elapsed time 0.006
+    [MICE] Starting imputation round 4/110, elapsed time 0.007
+    [MICE] Starting imputation round 5/110, elapsed time 0.008
+    [MICE] Starting imputation round 6/110, elapsed time 0.009
+    [MICE] Starting imputation round 7/110, elapsed time 0.010
+    [MICE] Starting imputation round 8/110, elapsed time 0.010
+    [MICE] Starting imputation round 9/110, elapsed time 0.011
+    [MICE] Starting imputation round 10/110, elapsed time 0.012
+    [MICE] Starting imputation round 11/110, elapsed time 0.013
+    [MICE] Starting imputation round 12/110, elapsed time 0.014
+    [MICE] Starting imputation round 13/110, elapsed time 0.015
+    [MICE] Starting imputation round 14/110, elapsed time 0.016
+    [MICE] Starting imputation round 15/110, elapsed time 0.017
+    [MICE] Starting imputation round 16/110, elapsed time 0.018
+    [MICE] Starting imputation round 17/110, elapsed time 0.019
+    [MICE] Starting imputation round 18/110, elapsed time 0.020
+    [MICE] Starting imputation round 19/110, elapsed time 0.021
+    [MICE] Starting imputation round 20/110, elapsed time 0.022
+    [MICE] Starting imputation round 21/110, elapsed time 0.023
+    [MICE] Starting imputation round 22/110, elapsed time 0.023
+    [MICE] Starting imputation round 23/110, elapsed time 0.024
+    [MICE] Starting imputation round 24/110, elapsed time 0.025
+    [MICE] Starting imputation round 25/110, elapsed time 0.026
+    [MICE] Starting imputation round 26/110, elapsed time 0.027
+    [MICE] Starting imputation round 27/110, elapsed time 0.028
+    [MICE] Starting imputation round 28/110, elapsed time 0.028
+    [MICE] Starting imputation round 29/110, elapsed time 0.029
+    [MICE] Starting imputation round 30/110, elapsed time 0.030
+    [MICE] Starting imputation round 31/110, elapsed time 0.034
+    [MICE] Starting imputation round 32/110, elapsed time 0.035
+    [MICE] Starting imputation round 33/110, elapsed time 0.036
+    [MICE] Starting imputation round 34/110, elapsed time 0.037
+    [MICE] Starting imputation round 35/110, elapsed time 0.038
+    [MICE] Starting imputation round 36/110, elapsed time 0.039
+    [MICE] Starting imputation round 37/110, elapsed time 0.040
+    [MICE] Starting imputation round 38/110, elapsed time 0.040
+    [MICE] Starting imputation round 39/110, elapsed time 0.041
+    [MICE] Starting imputation round 40/110, elapsed time 0.042
+    [MICE] Starting imputation round 41/110, elapsed time 0.043
+    [MICE] Starting imputation round 42/110, elapsed time 0.044
+    [MICE] Starting imputation round 43/110, elapsed time 0.044
+    [MICE] Starting imputation round 44/110, elapsed time 0.045
+    [MICE] Starting imputation round 45/110, elapsed time 0.046
+    [MICE] Starting imputation round 46/110, elapsed time 0.047
+    [MICE] Starting imputation round 47/110, elapsed time 0.048
+    [MICE] Starting imputation round 48/110, elapsed time 0.050
+    [MICE] Starting imputation round 49/110, elapsed time 0.050
+    [MICE] Starting imputation round 50/110, elapsed time 0.051
+    [MICE] Starting imputation round 51/110, elapsed time 0.052
+    [MICE] Starting imputation round 52/110, elapsed time 0.053
+    [MICE] Starting imputation round 53/110, elapsed time 0.054
+    [MICE] Starting imputation round 54/110, elapsed time 0.055
+    [MICE] Starting imputation round 55/110, elapsed time 0.056
+    [MICE] Starting imputation round 56/110, elapsed time 0.056
+    [MICE] Starting imputation round 57/110, elapsed time 0.057
+    [MICE] Starting imputation round 58/110, elapsed time 0.058
+    [MICE] Starting imputation round 59/110, elapsed time 0.059
+    [MICE] Starting imputation round 60/110, elapsed time 0.060
+    [MICE] Starting imputation round 61/110, elapsed time 0.061
     [MICE] Starting imputation round 62/110, elapsed time 0.062
     [MICE] Starting imputation round 63/110, elapsed time 0.063
     [MICE] Starting imputation round 64/110, elapsed time 0.064
-    [MICE] Starting imputation round 65/110, elapsed time 0.066
-    [MICE] Starting imputation round 66/110, elapsed time 0.067
+    [MICE] Starting imputation round 65/110, elapsed time 0.065
+    [MICE] Starting imputation round 66/110, elapsed time 0.066
     [MICE] Starting imputation round 67/110, elapsed time 0.067
     [MICE] Starting imputation round 68/110, elapsed time 0.068
     [MICE] Starting imputation round 69/110, elapsed time 0.069
@@ -766,42 +753,42 @@ complete_data.Age = complete_data.Age[~(complete_data.Age).index.duplicated(keep
     [MICE] Starting imputation round 72/110, elapsed time 0.071
     [MICE] Starting imputation round 73/110, elapsed time 0.072
     [MICE] Starting imputation round 74/110, elapsed time 0.073
-    [MICE] Starting imputation round 75/110, elapsed time 0.077
-    [MICE] Starting imputation round 76/110, elapsed time 0.078
-    [MICE] Starting imputation round 77/110, elapsed time 0.078
-    [MICE] Starting imputation round 78/110, elapsed time 0.079
-    [MICE] Starting imputation round 79/110, elapsed time 0.081
-    [MICE] Starting imputation round 80/110, elapsed time 0.082
-    [MICE] Starting imputation round 81/110, elapsed time 0.082
-    [MICE] Starting imputation round 82/110, elapsed time 0.083
-    [MICE] Starting imputation round 83/110, elapsed time 0.084
-    [MICE] Starting imputation round 84/110, elapsed time 0.084
-    [MICE] Starting imputation round 85/110, elapsed time 0.085
-    [MICE] Starting imputation round 86/110, elapsed time 0.085
-    [MICE] Starting imputation round 87/110, elapsed time 0.086
-    [MICE] Starting imputation round 88/110, elapsed time 0.086
-    [MICE] Starting imputation round 89/110, elapsed time 0.087
+    [MICE] Starting imputation round 75/110, elapsed time 0.074
+    [MICE] Starting imputation round 76/110, elapsed time 0.075
+    [MICE] Starting imputation round 77/110, elapsed time 0.076
+    [MICE] Starting imputation round 78/110, elapsed time 0.077
+    [MICE] Starting imputation round 79/110, elapsed time 0.077
+    [MICE] Starting imputation round 80/110, elapsed time 0.078
+    [MICE] Starting imputation round 81/110, elapsed time 0.079
+    [MICE] Starting imputation round 82/110, elapsed time 0.080
+    [MICE] Starting imputation round 83/110, elapsed time 0.081
+    [MICE] Starting imputation round 84/110, elapsed time 0.082
+    [MICE] Starting imputation round 85/110, elapsed time 0.083
+    [MICE] Starting imputation round 86/110, elapsed time 0.083
+    [MICE] Starting imputation round 87/110, elapsed time 0.084
+    [MICE] Starting imputation round 88/110, elapsed time 0.085
+    [MICE] Starting imputation round 89/110, elapsed time 0.086
     [MICE] Starting imputation round 90/110, elapsed time 0.087
     [MICE] Starting imputation round 91/110, elapsed time 0.088
-    [MICE] Starting imputation round 92/110, elapsed time 0.089
-    [MICE] Starting imputation round 93/110, elapsed time 0.090
-    [MICE] Starting imputation round 94/110, elapsed time 0.092
-    [MICE] Starting imputation round 95/110, elapsed time 0.093
-    [MICE] Starting imputation round 96/110, elapsed time 0.094
-    [MICE] Starting imputation round 97/110, elapsed time 0.095
-    [MICE] Starting imputation round 98/110, elapsed time 0.095
-    [MICE] Starting imputation round 99/110, elapsed time 0.096
-    [MICE] Starting imputation round 100/110, elapsed time 0.096
-    [MICE] Starting imputation round 101/110, elapsed time 0.097
+    [MICE] Starting imputation round 92/110, elapsed time 0.088
+    [MICE] Starting imputation round 93/110, elapsed time 0.089
+    [MICE] Starting imputation round 94/110, elapsed time 0.090
+    [MICE] Starting imputation round 95/110, elapsed time 0.091
+    [MICE] Starting imputation round 96/110, elapsed time 0.092
+    [MICE] Starting imputation round 97/110, elapsed time 0.093
+    [MICE] Starting imputation round 98/110, elapsed time 0.093
+    [MICE] Starting imputation round 99/110, elapsed time 0.094
+    [MICE] Starting imputation round 100/110, elapsed time 0.095
+    [MICE] Starting imputation round 101/110, elapsed time 0.096
     [MICE] Starting imputation round 102/110, elapsed time 0.097
     [MICE] Starting imputation round 103/110, elapsed time 0.098
     [MICE] Starting imputation round 104/110, elapsed time 0.099
-    [MICE] Starting imputation round 105/110, elapsed time 0.099
-    [MICE] Starting imputation round 106/110, elapsed time 0.100
-    [MICE] Starting imputation round 107/110, elapsed time 0.100
-    [MICE] Starting imputation round 108/110, elapsed time 0.101
-    [MICE] Starting imputation round 109/110, elapsed time 0.102
-    [MICE] Starting imputation round 110/110, elapsed time 0.102
+    [MICE] Starting imputation round 105/110, elapsed time 0.100
+    [MICE] Starting imputation round 106/110, elapsed time 0.101
+    [MICE] Starting imputation round 107/110, elapsed time 0.102
+    [MICE] Starting imputation round 108/110, elapsed time 0.102
+    [MICE] Starting imputation round 109/110, elapsed time 0.103
+    [MICE] Starting imputation round 110/110, elapsed time 0.104
 
 
 
@@ -813,24 +800,29 @@ plt.title('Distribution of Ages')
 plt.legend()
 ```
 
-    /anaconda/lib/python3.6/site-packages/statsmodels/nonparametric/kdetools.py:20: VisibleDeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-      y = X[:m/2+1] + np.r_[0,X[m/2+1:],0]*1j
+
+
+
+    <matplotlib.legend.Legend at 0x10c63f710>
 
 
 
 
-
-    <matplotlib.legend.Legend at 0x11547b5c0>
-
+![png](Titanic_ML_v1_files/Titanic_ML_v1_44_1.png)
 
 
-
-![png](Titanic_ML_v1_files/Titanic_ML_v1_45_2.png)
-
+From the output above it is easy to see that distribution is not dramatically altered by the imputation. Additionally, there are no non-sensical ages (negative or extremely old) produced in the process. For experimenting with the tutorial this step is sufficent. In a more serious project this may be one of the most critical steps. 
 
 ## 4. Prediction <a class="anchor" id="fourth-bullet"></a>
 
-Insert description of model here. 
+The model was chosen to be a support vector machine ([SVM](http://scikit-learn.org/dev/modules/svm.html)) model. The reason for this choice:
+
+1. the method is for supervised classification. 
+2. effective for high dimensional systems (we intend to expand the features in the next post)
+ 
+In this model we choose to use the `rbf` kernel which is essentially an expansion to an "infinite" hyperspace of Gaussians. Therefore, if there is a why to seperate the data points by a single boundary this method has a chance to find it.
+
+Below is the code that impliments the model. The commented code below was used to perform a parameter search to find an optimal fit to the data. The highest ranked outcome was used. There is no particular reason for using a random search -we were just experimenting with the tools availiable natively in `sci-kit learn`. In fact, it is likely faster to use a straigt-forward grid search for a problem with so few features; however, this random search will scale more favorable as the number of features grows.
 
 
 ```python
@@ -897,7 +889,7 @@ print('Predicted Number of Survivors: %d' % int(np.sum(predictions)))
 ```
 
     Accuracy: 0.83 (+/- 0.02)
-    Predicted Number of Survivors: 163
+    Predicted Number of Survivors: 162
 
 
 
@@ -910,3 +902,13 @@ print('Predicted Number of Survivors: %d' % int(np.sum(predictions)))
 #
 # submission.to_csv('../submission.csv', index=False)
 ```
+
+### Summary of Results
+The base model is gubbed the gender model. It predicts that all women survive and all men don't. The second model is the SVM model above without scaling on the `fare` and `age` features. Finally, the last model is the fully scaled SVM. The results are summarized below, the accuracy is that on the test set withheld by Kaggle:
+
+1. gender only: 76.5% 
+2. SVM non-scaled: 75.6%
+3. SVM scaled: 79.9%
+
+The modest increase over the the base model is enough to move from the lowest rank (gender only model) to the top 20%. It will clearly be necessary to generate additional informative features to make further progress.
+
