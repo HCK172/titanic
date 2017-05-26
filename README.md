@@ -910,5 +910,5 @@ The base model is gubbed the gender model. It predicts that all women survive an
 2. SVM non-scaled: 75.6%
 3. SVM scaled: 79.9%
 
-The modest increase over the the base model is enough to move from the lowest rank (gender only model) to the top 15%. It will clearly be necessary to generate additional informative features to make further progress. This despite the number of perfect "predicitons" that populate the top of the list. I suppose you shouldn't predict what you can just look up.
+The modest increase over the the base model is enough to move from the lowest rank (gender only model) to the top 15%. It will clearly be necessary to generate additional informative features to make further progress. 
 
