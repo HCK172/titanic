@@ -822,7 +822,7 @@ The model was chosen to be a support vector machine ([SVM](http://scikit-learn.o
  
 In this model we choose to use the `rbf` kernel which is essentially an expansion to an "infinite" hyperspace of Gaussians. Therefore, if there is a why to seperate the data points by a single boundary this method has a chance to find it.
 
-Below is the code that impliments the model. The commented code below was used to perform a parameter search to find an optimal fit to the data. The highest ranked outcome was used. There is no particular reason for using a random search -we were just experimenting with the tools availiable natively in `sci-kit learn`. In fact, it is likely faster to use a straigt-forward grid search for a problem with so few features; however, this random search will scale more favorable as the number of features grows.
+Below is the code that impliments the model. The commented code below was used to perform a parameter search to find an optimal fit to the data. The highest ranked outcome was used. There is no particular reason for using a random search -we were just experimenting with the tools availiable natively in `sci-kit learn`. In fact, it is likely faster to use a straigt-forward grid search for a problem with so few features; however, this random search will be more practical as the number of hyper parameters in future models grows.
 
 
 ```python
